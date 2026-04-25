@@ -1,88 +1,100 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="./static/css/styles.css" />
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="default-src * 'unsafe-inline' 'unsafe-eval'"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Tauri App</title>
-        <script src="./static/js/main.js"></script>
-    </head>
-    <body>
-        <main class="container">
-            <h1>Welcome to TauriMan</h1>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频客户端</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:"微软雅黑",sans-serif;}
+        body{
+            background: linear-gradient(135deg,#b8a0e8,#9d7fe0);
+            min-height:100vh;
+        }
+        .login-box{
+            width:90%;max-width:400px;
+            background:rgba(255,255,255,0.9);
+            border-radius:16px;padding:30px;margin:80px auto;
+        }
+        .login-box h2{text-align:center;color:#7b5fc9;margin-bottom:25px;}
+        .input-item{margin-bottom:18px;}
+        .input-item input{
+            width:100%;height:45px;border:1px solid #d8c8f0;
+            border-radius:8px;padding:0 15px;font-size:16px;outline:none;
+        }
+        .btn{
+            width:100%;height:45px;background:#8c6ed8;
+            color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;
+        }
+        .btn:hover{background:#7b5fc9;}
+        .main-box{display:none;width:95%;margin:20px auto;padding:15px;}
+        .title-bar{text-align:center;color:#fff;font-size:20px;margin-bottom:20px;}
+        .video-list{background:rgba(255,255,255,0.9);border-radius:12px;padding:20px;}
+        .video-item{padding:10px;border-bottom:1px solid #eee;margin-bottom:10px;}
+        video{width:100%;border-radius:8px;}
+    </style>
+</head>
+<body>
+    <div class="login-box" id="loginPage">
+        <h2>账号登录</h2>
+        <div class="input-item">
+            <input type="text" id="username" placeholder="请输入姓名">
+        </div>
+        <div class="input-item">
+            <input type="password" id="pwd" placeholder="请输入密码">
+        </div>
+        <button class="btn" onclick="login()">登录</button>
+    </div>
 
-            <div class="row">
-                <a
-                    href="https://tauri.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="./assets/tauri.svg"
-                        class="logo tauri"
-                        alt="Tauri logo"
-                    />
-                </a>
-                <a
-                    href="https://pakeplus.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/app-icon.png"
-                        class="logo vanilla"
-                        alt="JavaScript logo"
-                    />
-                </a>
-            </div>
-            <p>Click to get data</p>
-            <form class="row" id="greet-form">
-                <input id="greet-input" placeholder="Enter a name..." />
-                <button type="submit" id="getdata">GET DATA</button>
-            </form>
-            <div class="functions">
-                <a href="./book.html" target="_self">跳转到book.html</a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >跳到百度blank
-                </a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_self"
-                    rel="noopener noreferrer"
-                >
-                    跳到百度self
-                </a>
-                <button onclick="sayHello()">点击我</button>
-                <button onclick="sayHello()">下载文件</button>
-                <button onclick="sayHello()">上传文件</button>
-                <button onclick="sayHello()">访问相机</button>
-                <button onclick="sayHello()">访问麦克风</button>
-                <button onclick="sayHello()">访问相册</button>
-                <button class="btn" onclick="openWechat()">打开微信</button>
-                <button class="btn" onclick="openWechatScan()">
-                    打开扫一扫
-                </button>
-                <button class="btn" onclick="openZhihu()">打开知乎</button>
-                <button onclick="sayHello()">打开抖音</button>
-                <button onclick="sayHello()">用浏览器打开</button>
-                <button>打开知乎</button>
-            </div>
-            <p id="greet-msg"></p>
-            <img src="./static/image/cursor.jpeg" alt="logo" />
-            <video
-                src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/docs/static/videos/pakeplus.mp4"
-                autoplay
-                controls
-                style="width: 100%; height: 100%"
-            ></video>
-            <audio src="./static/music/yin.mp3" controls></audio>
-        </main>
-    </body>
+    <div class="main-box" id="mainPage">
+        <div class="title-bar">视频观看客户端</div>
+        <div class="video-list">
+            <h3>最新视频列表</h3>
+            <div id="videoListBox"></div>
+        </div>
+    </div>
+
+    <script>
+        // 改成你自己的电脑IP
+        const BASE_URL = "http://192.168.1.100:3000";
+        let loginName = "";
+        let loginPwd = "";
+
+        // 登录+注册自动存入服务器
+        async function login(){
+            let name = document.getElementById("username").value.trim();
+            let pwd = document.getElementById("pwd").value.trim();
+            if(!name||!pwd){alert("请填写姓名和密码！");return;}
+            loginName = name;
+            loginPwd = pwd;
+
+            // 提交用户信息到服务器储存
+            await fetch(`${BASE_URL}/api/register`,{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({username:name,password:pwd})
+            });
+
+            document.getElementById("loginPage").style.display="none";
+            document.getElementById("mainPage").style.display="block";
+            getVideoList();
+        }
+
+        // 从服务器获取视频
+        async function getVideoList(){
+            let res = await fetch(`${BASE_URL}/api/videolist`);
+            let list = await res.json();
+            let box = document.getElementById("videoListBox");
+            box.innerHTML = "";
+            list.forEach(item=>{
+                box.innerHTML += `
+                    <div class="video-item">
+                        <p>视频名称：${item.name}</p>
+                        <p>发布时间：${item.time}</p>
+                        <video controls src="${BASE_URL}/videos/${item.path}"></video>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
 </html>
